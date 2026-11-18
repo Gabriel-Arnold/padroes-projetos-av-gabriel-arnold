@@ -1,0 +1,101 @@
+@startuml
+skinparam classAttributeIconSize 0
+hide empty members
+title Questao 4 - Provisionamento multinuvem
+
+class Main <<Client>>
+class "Provisionador<P>" as Provisionador <<Client>> {
+  - fabrica: FabricaRecursos<P>
+  + provisionar(nome, maquinas, gigabytes): Ambiente<P>
+}
+interface "FabricaRecursos<P>" as FabricaRecursos <<AbstractFactory>> {
+  + getProvedor(): String
+  + estimarCusto(maquinas, gigabytes): double
+  + criarMaquina(): MaquinaVirtual<P>
+  + criarArmazenamento(): Armazenamento<P>
+  + criarFila(): Fila<P>
+}
+class FabricaAws <<ConcreteFactory>>
+class FabricaAzure <<ConcreteFactory>>
+interface Recurso {
+  + getIdentificador(): String
+}
+interface "MaquinaVirtual<P>" as MaquinaVirtual <<AbstractProduct>>
+interface "Armazenamento<P>" as Armazenamento <<AbstractProduct>>
+interface "Fila<P>" as Fila <<AbstractProduct>>
+class MaquinaAws <<ConcreteProduct>>
+class ArmazenamentoAws <<ConcreteProduct>>
+class FilaAws <<ConcreteProduct>>
+class MaquinaAzure <<ConcreteProduct>>
+class ArmazenamentoAzure <<ConcreteProduct>>
+class FilaAzure <<ConcreteProduct>>
+class "Ambiente<P>" as Ambiente {
+  - nome: String
+  - provedor: String
+  - gigabytes: int
+  - custo: double
+  + imprimirResumo()
+}
+class Configuracao <<Singleton>> {
+  - Configuracao()
+  - regiao: String
+  - orcamentoMensal: double
+  {static} + getInstancia(): Configuracao
+}
+class "Configuracao.Holder" as Holder {
+  {static} - INSTANCIA: Configuracao
+}
+class Auditoria <<Singleton>> {
+  - Auditoria()
+  - historico: List<String>
+  {static} + getInstancia(): Auditoria
+  + registrar(ambiente, provedor, resultado)
+  + getHistorico(): List<String>
+  + imprimirHistorico()
+}
+
+Main ..> Provisionador
+Main ..> FabricaAws
+Main ..> FabricaAzure
+Main ..> Auditoria
+Provisionador --> FabricaRecursos
+Provisionador ..> Ambiente : cria
+Provisionador ..> Configuracao
+Provisionador ..> Auditoria
+FabricaAws ..|> FabricaRecursos : P = FabricaAws
+FabricaAzure ..|> FabricaRecursos : P = FabricaAzure
+MaquinaVirtual --|> Recurso
+Armazenamento --|> Recurso
+Fila --|> Recurso
+MaquinaAws ..|> MaquinaVirtual : P = FabricaAws
+ArmazenamentoAws ..|> Armazenamento : P = FabricaAws
+FilaAws ..|> Fila : P = FabricaAws
+MaquinaAzure ..|> MaquinaVirtual : P = FabricaAzure
+ArmazenamentoAzure ..|> Armazenamento : P = FabricaAzure
+FilaAzure ..|> Fila : P = FabricaAzure
+FabricaAws ..> MaquinaAws : cria
+FabricaAws ..> ArmazenamentoAws : cria
+FabricaAws ..> FilaAws : cria
+FabricaAzure ..> MaquinaAzure : cria
+FabricaAzure ..> ArmazenamentoAzure : cria
+FabricaAzure ..> FilaAzure : cria
+Ambiente *-- "0..*" MaquinaVirtual
+Ambiente *-- "1" Armazenamento
+Ambiente *-- "1" Fila
+Ambiente ..> Configuracao
+Configuracao +-- Holder
+Holder --> Configuracao : instancia unica
+
+note bottom of Ambiente
+  O mesmo parametro P nos tres produtos impede
+  misturar familias no ambiente com tipos genericos.
+end note
+note bottom of Auditoria
+  Metodos sincronizados preservam todos os registros
+  e sua ordem de insercao entre threads.
+end note
+note bottom of FabricaAws
+  Contadores static AtomicInteger por tipo.
+  FabricaAzure utiliza a mesma protecao.
+end note
+@enduml
