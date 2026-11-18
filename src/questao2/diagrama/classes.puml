@@ -1,0 +1,118 @@
+@startuml
+skinparam classAttributeIconSize 0
+hide empty members
+title Questao 5 - Casa de leiloes
+
+class Main <<Client>>
+class Lote <<Subject / Context>> {
+  - nome: String
+  - categoria: String
+  - precoInicial: double
+  - precoReserva: double
+  - lanceAtual: double
+  - aberto: boolean
+  - vendido: boolean
+  - comissao: double
+  + adicionarObserver(observer)
+  + removerObserver(observer)
+  + darLance(participante: Licitante, valor): boolean
+  + setStrategy(strategy)
+  + encerrar()
+  + imprimirAcerto()
+  + exigirVenda()
+}
+interface Observer <<Observer>> {
+  + atualizar(lote: Lote, lance: Lance)
+}
+interface Licitante {
+  + getNome(): String
+}
+class Participante <<ConcreteObserver>>
+class Painel <<ConcreteObserver>>
+class Auditor <<ConcreteObserver>> {
+  - historico: List<String>
+  + getHistorico(): List<String>
+}
+class Lance {
+  - valor: double
+  - dataHora: LocalDateTime
+}
+interface Strategy <<Strategy>> {
+  + calcularComissao(valorVenda): double
+}
+class Arte <<ConcreteStrategy>>
+class Veiculos <<ConcreteStrategy>>
+class Imoveis <<ConcreteStrategy>>
+class Eletronicos <<ConcreteStrategy>>
+interface Fatura <<Component>> {
+  + descricao(): String
+  + custo(): double
+  + valorVenda(): double
+}
+class Venda <<ConcreteComponent>> {
+  - lote: String
+  - valor: double
+}
+abstract class Decorator <<Decorator>> {
+  # fatura: Fatura
+}
+class SeguroDecorator <<ConcreteDecorator>>
+class CertificadoDecorator <<ConcreteDecorator>>
+class EmbalagemDecorator <<ConcreteDecorator>>
+class EntregaDecorator <<ConcreteDecorator>>
+class ImpressoraFatura <<Client>> {
+  + imprimir(fatura: Fatura)
+}
+class Dinheiro <<Utility>> {
+  {static} + arredondar(valor): double
+}
+
+Licitante --|> Observer
+Participante ..|> Licitante
+Painel ..|> Observer
+Auditor ..|> Observer
+Lote o-- "0..*" Observer : acompanha
+Lote ..> Licitante : recebe lances
+Lote *-- "0..*" Lance
+Lance --> "1" Licitante : autor
+Lote --> "1" Strategy : comissao trocavel
+Arte ..|> Strategy
+Veiculos ..|> Strategy
+Imoveis ..|> Strategy
+Eletronicos ..|> Strategy
+Venda ..|> Fatura
+Decorator ..|> Fatura
+Decorator o-- "1" Fatura : envolve
+SeguroDecorator --|> Decorator
+CertificadoDecorator --|> Decorator
+EmbalagemDecorator --|> Decorator
+EntregaDecorator --|> Decorator
+Venda ..> Lote : obtem venda encerrada
+ImpressoraFatura ..> Fatura
+Lote ..> Dinheiro
+SeguroDecorator ..> Dinheiro
+CertificadoDecorator ..> Dinheiro
+EmbalagemDecorator ..> Dinheiro
+EntregaDecorator ..> Dinheiro
+Main ..> Lote
+Main ..> Participante
+Main ..> Painel
+Main ..> Auditor
+Main ..> Arte
+Main ..> Veiculos
+Main ..> Eletronicos
+Main ..> Venda
+Main ..> SeguroDecorator
+Main ..> CertificadoDecorator
+Main ..> EmbalagemDecorator
+Main ..> ImpressoraFatura
+
+note bottom of Lote
+  Notifica apenas lances aceitos e exclui seu autor.
+  Comissao e fixada com a regra vigente no encerramento.
+end note
+note bottom of Decorator
+  Servicos podem ser combinados e repetidos.
+  Seguro usa o valor da venda, sem incluir adicionais.
+end note
+@enduml
